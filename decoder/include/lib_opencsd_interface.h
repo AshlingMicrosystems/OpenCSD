@@ -9,6 +9,7 @@
 #include "opencsd.h"
 #include <iostream>
 #include <fstream>
+
 // The following ifdef block is the standard way of creating macros which make exporting
 // from a DLL simpler. All files within this DLL are compiled with the OPENCSDINTERFACE_EXPORTS
 // symbol defined on the command line. This symbol should not be defined on any project
@@ -42,6 +43,7 @@ typedef enum
     TRACE_DECODER_MEM_ACC_MAP_ADD_ERR,
     TRACE_DECODER_DATA_PATH_FATAL_ERR,
     TRACE_DECODER_CANNOT_OPEN_FILE,
+    TRACE_DECODER_INVALID_HANDLE,
     TRACE_DECODER_ERR
 } TyTraceDecodeError;
 
@@ -81,7 +83,7 @@ public:
 class OpenCSDInterface
 {
 protected:
-private:
+public:
     DecodeTree* mp_tree;
     TraceLogger* mp_logger;
 public:
@@ -94,13 +96,13 @@ public:
     // Function to initialize the trace output logger
     virtual TyTraceDecodeError InitLogger(const char* log_file_path, const bool split_files = false, const uint32_t max_rows_in_file = DEAFAULT_MAX_TRACE_FILE_ROW_CNT);
     // Function to create ETMv4 Decoder
-    virtual TyTraceDecodeError CreateETMv4Decoder(const ocsd_etmv4_cfg config);
+    virtual TyTraceDecodeError CreateETMv4Decoder(const ocsd_etmv4_cfg config, int32_t create_flags = OCSD_CREATE_FLG_FULL_DECODER);
     // Function to create ETMv3 Decoder
-    virtual TyTraceDecodeError CreateETMv3Decoder(const ocsd_etmv3_cfg config);
+    virtual TyTraceDecodeError CreateETMv3Decoder(const ocsd_etmv3_cfg config, int32_t create_flags = OCSD_CREATE_FLG_FULL_DECODER);
     // Function to create STM Decoder
-    virtual TyTraceDecodeError CreateSTMDecoder(const ocsd_stm_cfg config);
+    virtual TyTraceDecodeError CreateSTMDecoder(const ocsd_stm_cfg config, int32_t create_flags = OCSD_CREATE_FLG_FULL_DECODER);
     // Function to create PTM Decoder
-    virtual TyTraceDecodeError CreatePTMDecoder(const ocsd_ptm_cfg config);
+    virtual TyTraceDecodeError CreatePTMDecoder(const ocsd_ptm_cfg config, int32_t create_flags = OCSD_CREATE_FLG_FULL_DECODER);
     // Function to create memory access mapper
     virtual TyTraceDecodeError CreateMemAccMapper();
     // Function to add memory access map from bin file
@@ -113,6 +115,13 @@ public:
     virtual TyTraceDecodeError AddMemoryAccessCallback(const ocsd_vaddr_t st_address, const ocsd_vaddr_t en_address, const ocsd_mem_space_acc_t mem_space, Fn_MemAcc_CB p_cb_func, const void* p_context);
     // Function to decode the trace file
     virtual TyTraceDecodeError DecodeTrace(const char* trace_in_file);
+    // Function to decode trace buffer
+    virtual TyTraceDecodeError DecodeTraceBuffer(uint8_t* buffer, uint32_t size);
+    // Function to get the created decode tree object
+    virtual TyTraceDecodeError SetPacketMonitorCallback(const uint8_t CSID, void* p_fn_callback_data, const void* p_context);
+    virtual TyTraceDecodeError SetPacketMonitorSink(const uint8_t CSID, ITrcTypedBase* pDataInSink, uint32_t config_flags);
+    // Mark the end of trace
+    virtual TyTraceDecodeError SetEOT();
     // Function to destroy the decoder tree
     virtual void DestroyDecodeTree();
     // Destructor
