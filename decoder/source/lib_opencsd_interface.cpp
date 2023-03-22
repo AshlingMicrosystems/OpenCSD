@@ -5,6 +5,7 @@
   Date           Initials    Description
   30-Aug-2022    AS          Initial
 ******************************************************************************/
+#include <limits.h>
 #include "lib_opencsd_interface.h"
 #include "opencsd/c_api/ocsd_c_api_types.h"
 
@@ -82,6 +83,12 @@ OpenCSDInterface::OpenCSDInterface()
 ****************************************************************************/
 TyTraceDecodeError OpenCSDInterface::InitLogger(const char *log_file_path, const bool split_files, const uint32_t max_rows_in_file)
 {
+    if (mp_logger)
+    {
+        mp_logger->CloseLogFile();
+        delete mp_logger;
+        mp_logger = NULL;
+    }
     mp_logger = new TraceLogger(log_file_path, split_files, max_rows_in_file);
     if (!mp_logger)
     {
@@ -437,6 +444,12 @@ TyTraceDecodeError OpenCSDInterface::SetEOT()
     mp_logger ? mp_logger->CloseLogFile() : NULL;
     return (OCSD_DATA_RESP_IS_FATAL(err)) ? TRACE_DECODER_DATA_PATH_FATAL_ERR : TRACE_DECODER_OK;
 }
+TyTraceDecodeError OpenCSDInterface::ResetDecoder()
+{
+    ocsd_datapath_resp_t err = mp_tree->TraceDataIn(OCSD_OP_RESET, 0, 0, 0, 0);
+    mp_logger ? mp_logger->CloseLogFile() : NULL;
+    return (OCSD_DATA_RESP_IS_FATAL(err)) ? TRACE_DECODER_DATA_PATH_FATAL_ERR : TRACE_DECODER_OK;
+}
 /****************************************************************************
      Function: DecodeTraceBuffer
      Engineer: Arjun Suresh
@@ -448,7 +461,7 @@ TyTraceDecodeError OpenCSDInterface::SetEOT()
   Date         Initials    Description
 30-Aug-2022    AS          Initial
 ****************************************************************************/
-TyTraceDecodeError OpenCSDInterface::DecodeTraceBuffer(uint8_t* trace_buffer, uint32_t size)
+TyTraceDecodeError OpenCSDInterface::DecodeTraceBuffer(uint8_t* trace_buffer, uint32_t size, uint32_t block_idx)
 {
     if(trace_buffer == NULL)
     {
@@ -458,7 +471,7 @@ TyTraceDecodeError OpenCSDInterface::DecodeTraceBuffer(uint8_t* trace_buffer, ui
     uint32_t nBuffRead = size;                           // get count of data loaded.
     uint32_t nBuffProcessed = 0;         // amount processed in this buffer.
     uint32_t nUsedThisTime = 0;
-    static uint32_t trace_index = 0;
+    uint32_t trace_index = 0;
 
     // process the current buffer load until buffer done, or fatal error occurs
     while ((nBuffProcessed < nBuffRead) && !OCSD_DATA_RESP_IS_FATAL(dataPathResp))
@@ -467,13 +480,18 @@ TyTraceDecodeError OpenCSDInterface::DecodeTraceBuffer(uint8_t* trace_buffer, ui
         {
             dataPathResp = mp_tree->TraceDataIn(
                 OCSD_OP_DATA,
-                trace_index,
+                block_idx + trace_index,
                 (uint32_t)(nBuffRead - nBuffProcessed),
                 &(trace_buffer[0]) + nBuffProcessed,
                 &nUsedThisTime);
 
             nBuffProcessed += nUsedThisTime;
             trace_index += nUsedThisTime;
+            if (dataPathResp == OCSD_RESP_REACHED_STOP_IDX)
+            {
+                mp_tree->TraceDataIn(OCSD_OP_FLUSH, 0, 0, 0, 0);
+                return TRACE_DECODER_OK;
+            }
         }
     }
 
@@ -622,10 +640,65 @@ TraceLogger::TraceLogger(const std::string log_file_path, const bool split_files
     m_out_ex_level(true),
     m_cycle_cnt(0),
     m_last_timestamp(0),
-    m_update_cycle_cnt(false)
+    m_update_cycle_cnt(false),
+    m_first_valid_idx_found(false),
+    m_first_valid_trace_idx(0),
+    m_trace_stop_idx(ULLONG_MAX),
+    m_trace_start_idx(0),
+    m_trace_stop_at_idx_flag(false),
+    m_trace_start_from_idx_flag(false),
+    m_last_pe_context_idx(0)
 {
 }
+void TraceLogger::ResetLogger()
+{
+    //m_first_valid_trace_idx = 0;
+    m_first_valid_idx_found = false;
+}
+void TraceLogger::SetTraceStopIdx(uint64_t index)
+{
+    m_trace_stop_idx = index;
+}
+void TraceLogger::ResetTraceStopIdxFlag()
+{
+    m_first_valid_idx_found = false;
+}
 
+uint64_t TraceLogger::GetLastValidIdx()
+{
+    return m_last_valid_trace_idx;
+}
+
+void TraceLogger::SetTraceStartIdx(uint64_t idx)
+{
+   // m_trace_start_from_idx_flag = true;
+    m_trace_start_idx = idx;
+}
+
+uint64_t TraceLogger::GetFirstValidIdx()
+{
+    return m_first_valid_trace_idx;
+}
+
+uint64_t TraceLogger::GetLastPEContextIdx()
+{
+    return m_last_pe_context_idx;
+}
+
+uint64_t OpenCSDInterface::GetFirstValidIdx()
+{
+    return mp_logger->GetFirstValidIdx();
+}
+
+void OpenCSDInterface::SetTraceStopIdx(uint64_t index)
+{
+    return mp_logger->SetTraceStopIdx(index);
+}
+
+void OpenCSDInterface::ResetTraceStopIdxFlag()
+{
+    mp_logger->ResetTraceStopIdxFlag();
+}
 /****************************************************************************
      Function: OpenLogFile
      Engineer: Arjun Suresh
@@ -699,6 +772,29 @@ ocsd_datapath_resp_t TraceLogger::TraceElemIn(const ocsd_trc_index_t index_sop,
     const OcsdTraceElement &elem)
 {
     ocsd_datapath_resp_t resp = OCSD_RESP_CONT;
+    if(elem.elem_type != OCSD_GEN_TRC_ELEM_NO_SYNC)
+        m_last_valid_trace_idx = index_sop;
+    if (elem.elem_type == OCSD_GEN_TRC_ELEM_PE_CONTEXT)
+    {
+       // printf("\nSync PE Context[%d]", index_sop);
+        m_last_pe_context_idx = index_sop;
+    }
+    if (m_first_valid_idx_found == false && elem.elem_type != OCSD_GEN_TRC_ELEM_NO_SYNC)
+    {
+        m_first_valid_trace_idx = index_sop;
+        m_first_valid_idx_found = true;
+        printf("\nSetting First Valid Trace Idx [%u]", m_first_valid_trace_idx);
+    }
+    if (index_sop < m_trace_start_idx) // Original if (index_sop <= m_trace_start_idx)
+    {
+        return OCSD_RESP_CONT;
+    }
+    if (index_sop > m_trace_stop_idx)  // Original  if (index_sop >= m_trace_stop_idx)
+    {
+        //printf("\nReached Stop Trace Idx [%u]", index_sop);
+        return OCSD_RESP_REACHED_STOP_IDX;
+    }
+
 
     switch (elem.elem_type)
     {
@@ -706,14 +802,14 @@ ocsd_datapath_resp_t TraceLogger::TraceElemIn(const ocsd_trc_index_t index_sop,
     {
         if (elem.context.ctxt_id_valid)
         {
-            fprintf(m_fp_decode_out, "%s%u\n", "PECC:CID=", elem.context.context_id);
+            //fprintf(m_fp_decode_out, "%d %s%u\n", index_sop, "PECC:CID=", elem.context.context_id);
             m_rows_in_file++;
         }
     }
     break;
     case OCSD_GEN_TRC_ELEM_ADDR_NACC:
     {
-        fprintf(m_fp_decode_out, "%u,%u,%u,", index_sop, ((trc_chan_id & 0x0F) >> 1), (elem.context.ctxt_id_valid ? elem.context.context_id : 0));
+        fprintf(m_fp_decode_out, "%u,%u,%u,", 0, ((trc_chan_id & 0x0F) >> 1), (elem.context.ctxt_id_valid ? elem.context.context_id : 0));
         if (m_update_cycle_cnt)
         {
             fprintf(m_fp_decode_out, "%u,", m_cycle_cnt);
@@ -738,7 +834,7 @@ ocsd_datapath_resp_t TraceLogger::TraceElemIn(const ocsd_trc_index_t index_sop,
         uint32_t step = elem.traced_ins.ptr_addresses ? 1 : elem.last_instr_sz;
         for (uint64_t i = start_idx; i < end_idx; i+=step)
         {
-            fprintf(m_fp_decode_out, "%u,%u,%u,", 0, ((trc_chan_id & 0x0F) >> 1), (elem.context.ctxt_id_valid ? elem.context.context_id : 0));
+            fprintf(m_fp_decode_out, "%u,%u,%u,", index_sop, ((trc_chan_id & 0x0F) >> 1), (elem.context.ctxt_id_valid ? elem.context.context_id : 0));
             if (m_update_cycle_cnt)
             {
                 fprintf(m_fp_decode_out, "%u,", 0);
@@ -784,7 +880,7 @@ ocsd_datapath_resp_t TraceLogger::TraceElemIn(const ocsd_trc_index_t index_sop,
     {
         if (elem.has_cc)
         {
-            fprintf(m_fp_decode_out, "CC = %u\n", elem.cycle_count);
+            fprintf(m_fp_decode_out, "%d CC = %u\n", index_sop, elem.cycle_count);
             m_cycle_cnt = elem.cycle_count;
             m_update_cycle_cnt = true;
         }
@@ -793,7 +889,7 @@ ocsd_datapath_resp_t TraceLogger::TraceElemIn(const ocsd_trc_index_t index_sop,
     case OCSD_GEN_TRC_ELEM_TIMESTAMP:
     {
         m_last_timestamp = elem.timestamp;
-        fprintf(m_fp_decode_out, "%s%llu\n", "TS:", m_last_timestamp);
+        fprintf(m_fp_decode_out, "%d %s%llu\n", index_sop, "TS:", m_last_timestamp);
         m_rows_in_file++;
     }
     break;

@@ -64,6 +64,14 @@ private:
     const uint32_t m_max_rows_in_file;
     bool m_update_cycle_cnt;
     bool m_out_ex_level;
+    bool m_first_valid_idx_found;
+    uint64_t m_first_valid_trace_idx;
+    uint64_t m_last_valid_trace_idx;
+    uint64_t m_last_pe_context_idx;
+    bool m_trace_stop_at_idx_flag;
+    bool m_trace_start_from_idx_flag;
+    uint64_t m_trace_start_idx;
+    uint64_t m_trace_stop_idx;
 public:
     // Constructor
     TraceLogger(const std::string log_file_path, const bool split_files = false, const uint32_t max_rows_in_file = DEAFAULT_MAX_TRACE_FILE_ROW_CNT);
@@ -76,6 +84,13 @@ public:
     void OpenLogFile();
     // Close trace decoded ouput log file
     void CloseLogFile();
+    void SetTraceStopIdx(uint64_t index);
+    void SetTraceStartIdx(uint64_t index);
+    uint64_t GetFirstValidIdx();
+    uint64_t GetLastValidIdx();
+    void ResetLogger();
+    void ResetTraceStopIdxFlag();
+    uint64_t GetLastPEContextIdx();
 };
 
 // Class that provides the trace decoding functionality
@@ -116,16 +131,35 @@ public:
     // Function to decode the trace file
     virtual TyTraceDecodeError DecodeTrace(const char* trace_in_file);
     // Function to decode trace buffer
-    virtual TyTraceDecodeError DecodeTraceBuffer(uint8_t* buffer, uint32_t size);
+    virtual TyTraceDecodeError DecodeTraceBuffer(uint8_t* buffer, uint32_t size, uint32_t block_idx);
     // Function to get the created decode tree object
     virtual TyTraceDecodeError SetPacketMonitorCallback(const uint8_t CSID, void* p_fn_callback_data, const void* p_context);
     virtual TyTraceDecodeError SetPacketMonitorSink(const uint8_t CSID, ITrcTypedBase* pDataInSink, uint32_t config_flags);
     // Mark the end of trace
     virtual TyTraceDecodeError SetEOT();
+    virtual TyTraceDecodeError ResetDecoder();
     // Function to destroy the decoder tree
     virtual void DestroyDecodeTree();
     // Destructor
     virtual ~OpenCSDInterface();
+    virtual uint64_t GetFirstValidIdx();
+    virtual void ResetTraceStopIdxFlag();
+
+    virtual void SetTraceStopIdx(uint64_t index);
+    virtual void SetTraceStartIdx(uint64_t index) { mp_logger->SetTraceStartIdx(index); }
+    virtual uint64_t GetLastValidIdx() { return mp_logger->GetLastValidIdx(); }
+
+    virtual uint64_t GetLastPEContextIdx() { return mp_logger->GetLastPEContextIdx(); }
+    virtual void CloseLogFile()
+    {
+        ocsd_datapath_resp_t err = mp_tree->TraceDataIn(OCSD_OP_FLUSH, 0, 0, NULL, NULL);
+        if (mp_logger)
+            mp_logger->CloseLogFile();
+    }
+    virtual void ResetFirstValidIdx()
+    {
+        mp_logger->ResetLogger();
+    }
 };
 
 // Function pointer to CreateOpenCSDInterface
