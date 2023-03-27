@@ -37,6 +37,7 @@
 typedef enum
 {
     TRACE_DECODER_OK,
+    TRACE_DECODER_READ_STOP_IDX_OK,
     TRACE_DECODER_INIT_ERR,
     TRACE_DECODER_CFG_ERR,
     TRACE_DECODER_MEM_ACC_MAP_CREATE_ERR,
@@ -84,13 +85,22 @@ public:
     void OpenLogFile();
     // Close trace decoded ouput log file
     void CloseLogFile();
+    // Stop decoding at this index and return
     void SetTraceStopIdx(uint64_t index);
+    // Ignore packets till this index
     void SetTraceStartIdx(uint64_t index);
+    // Returns first valid trace index from trace decoding start
     uint64_t GetFirstValidIdx();
+    // Returns last valid trace index
     uint64_t GetLastValidIdx();
-    void ResetLogger();
-    void ResetTraceStopIdxFlag();
+    // Reset the first valid trace index
+    void ResetFirstValidIdx();
+    // Reset first valid index found flag
+    void ResetFirstValidIdxFlag();
+    // Get the last sync index
     uint64_t GetLastPEContextIdx();
+    // Check if first valid index is found
+    bool FirstValidIndexFound();
 };
 
 // Class that provides the trace decoding functionality
@@ -134,32 +144,34 @@ public:
     virtual TyTraceDecodeError DecodeTraceBuffer(uint8_t* buffer, uint32_t size, uint32_t block_idx);
     // Function to get the created decode tree object
     virtual TyTraceDecodeError SetPacketMonitorCallback(const uint8_t CSID, void* p_fn_callback_data, const void* p_context);
+    // Set the packet monitor sink
     virtual TyTraceDecodeError SetPacketMonitorSink(const uint8_t CSID, ITrcTypedBase* pDataInSink, uint32_t config_flags);
     // Mark the end of trace
     virtual TyTraceDecodeError SetEOT();
+    // Reset the decode state
     virtual TyTraceDecodeError ResetDecoder();
+    // Get first valid index
+    virtual uint64_t GetFirstValidIdx();
+    // Reset first valid index found flag
+    virtual void ResetFirstValidIdxFlag();
+    // Stop decoding at this index and return
+    virtual void SetTraceStopIdx(uint64_t index);
+    // Ignore packets till this index
+    virtual void SetTraceStartIdx(uint64_t index);
+    // Get the last valid index
+    virtual uint64_t GetLastValidIdx();
+    // Get the last sync index
+    virtual uint64_t GetLastPEContextIdx();
+    // Close the log file
+    virtual void CloseLogFile();
+    // Reset the first valid index
+    virtual void ResetFirstValidIdx();
+    // Check if a valid index is found
+    virtual bool FirstValidIndexFound();
     // Function to destroy the decoder tree
     virtual void DestroyDecodeTree();
     // Destructor
     virtual ~OpenCSDInterface();
-    virtual uint64_t GetFirstValidIdx();
-    virtual void ResetTraceStopIdxFlag();
-
-    virtual void SetTraceStopIdx(uint64_t index);
-    virtual void SetTraceStartIdx(uint64_t index) { mp_logger->SetTraceStartIdx(index); }
-    virtual uint64_t GetLastValidIdx() { return mp_logger->GetLastValidIdx(); }
-
-    virtual uint64_t GetLastPEContextIdx() { return mp_logger->GetLastPEContextIdx(); }
-    virtual void CloseLogFile()
-    {
-        ocsd_datapath_resp_t err = mp_tree->TraceDataIn(OCSD_OP_FLUSH, 0, 0, NULL, NULL);
-        if (mp_logger)
-            mp_logger->CloseLogFile();
-    }
-    virtual void ResetFirstValidIdx()
-    {
-        mp_logger->ResetLogger();
-    }
 };
 
 // Function pointer to CreateOpenCSDInterface

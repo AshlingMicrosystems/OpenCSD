@@ -9,6 +9,7 @@
 #include "lib_opencsd_interface.h"
 #include "opencsd/c_api/ocsd_c_api_types.h"
 
+// Class for attaching packet monitor callback
 template<class TrcPkt>
 class PktMonCBObj : public IPktRawDataMon<TrcPkt>
 {
@@ -346,14 +347,14 @@ TyTraceDecodeError OpenCSDInterface::AddMemoryAccessCallback(const ocsd_vaddr_t 
 }
 
 /****************************************************************************
-     Function: SetPacketMonitorCallback
+     Function: SetPacketMonitorSink
      Engineer: Arjun Suresh
         Input: CSID - Source ID
-               p_fn_callback_data - Packet Monitor Callback Function Pointer
-               p_context - Optional Context Pointer
+               pDataInSink - Data sink pointer
+               config_flags - Decoder config flags
        Output: None
        return: TyTraceDecodeError
-  Description: Set the Packet Monitor Callback
+  Description: Set the Packet Monitor Sink
   Date         Initials    Description
 30-Aug-2022    AS          Initial
 ****************************************************************************/
@@ -385,6 +386,19 @@ TyTraceDecodeError OpenCSDInterface::SetPacketMonitorSink(const uint8_t CSID, IT
     }
     return TRACE_DECODER_OK;
 }
+
+/****************************************************************************
+     Function: SetPacketMonitorCallback
+     Engineer: Arjun Suresh
+        Input: CSID - Source ID
+               p_fn_callback_data - Callback function
+               p_context - Context
+       Output: None
+       return: TyTraceDecodeError
+  Description: Set the Packet Monitor Callback
+  Date         Initials    Description
+30-Aug-2022    AS          Initial
+****************************************************************************/
 TyTraceDecodeError OpenCSDInterface::SetPacketMonitorCallback(const uint8_t CSID, void* p_fn_callback_data, const void* p_context)
 {
     ocsd_err_t err = OCSD_OK;
@@ -438,18 +452,42 @@ TyTraceDecodeError OpenCSDInterface::SetPacketMonitorCallback(const uint8_t CSID
     }
     return TRACE_DECODER_OK;
 }
+
+
+/****************************************************************************
+     Function: SetEOT
+     Engineer: Arjun Suresh
+        Input: None
+       Output: None
+       return: TyTraceDecodeError
+  Description: Marks end of trace
+  Date         Initials    Description
+30-Aug-2022    AS          Initial
+****************************************************************************/
 TyTraceDecodeError OpenCSDInterface::SetEOT()
 {
     ocsd_datapath_resp_t err = mp_tree->TraceDataIn(OCSD_OP_EOT, 0, 0, 0, 0);
     mp_logger ? mp_logger->CloseLogFile() : NULL;
     return (OCSD_DATA_RESP_IS_FATAL(err)) ? TRACE_DECODER_DATA_PATH_FATAL_ERR : TRACE_DECODER_OK;
 }
+
+/****************************************************************************
+     Function: ResetDecoder
+     Engineer: Arjun Suresh
+        Input: None
+       Output: None
+       return: TyTraceDecodeError
+  Description: Resets decoder state
+  Date         Initials    Description
+30-Aug-2022    AS          Initial
+****************************************************************************/
 TyTraceDecodeError OpenCSDInterface::ResetDecoder()
 {
     ocsd_datapath_resp_t err = mp_tree->TraceDataIn(OCSD_OP_RESET, 0, 0, 0, 0);
     mp_logger ? mp_logger->CloseLogFile() : NULL;
     return (OCSD_DATA_RESP_IS_FATAL(err)) ? TRACE_DECODER_DATA_PATH_FATAL_ERR : TRACE_DECODER_OK;
 }
+
 /****************************************************************************
      Function: DecodeTraceBuffer
      Engineer: Arjun Suresh
@@ -469,7 +507,7 @@ TyTraceDecodeError OpenCSDInterface::DecodeTraceBuffer(uint8_t* trace_buffer, ui
     }
     ocsd_datapath_resp_t dataPathResp = OCSD_RESP_CONT;
     uint32_t nBuffRead = size;                           // get count of data loaded.
-    uint32_t nBuffProcessed = 0;         // amount processed in this buffer.
+    uint32_t nBuffProcessed = 0;                        // amount processed in this buffer.
     uint32_t nUsedThisTime = 0;
     uint32_t trace_index = 0;
 
@@ -490,7 +528,7 @@ TyTraceDecodeError OpenCSDInterface::DecodeTraceBuffer(uint8_t* trace_buffer, ui
             if (dataPathResp == OCSD_RESP_REACHED_STOP_IDX)
             {
                 mp_tree->TraceDataIn(OCSD_OP_FLUSH, 0, 0, 0, 0);
-                return TRACE_DECODER_OK;
+                return TRACE_DECODER_READ_STOP_IDX_OK;
             }
         }
     }
@@ -581,6 +619,143 @@ TyTraceDecodeError OpenCSDInterface::DecodeTrace(const char* trace_in_file)
 
     return TRACE_DECODER_OK;
 }
+
+/****************************************************************************
+     Function: GetFirstValidIdx
+     Engineer: Arjun Suresh
+        Input: None
+       Output: None
+       return: None
+  Description: Returns first valid index
+  Date         Initials    Description
+30-Aug-2022    AS          Initial
+****************************************************************************/
+uint64_t OpenCSDInterface::GetFirstValidIdx()
+{
+    return mp_logger->GetFirstValidIdx();
+}
+
+/****************************************************************************
+     Function: SetTraceStopIdx
+     Engineer: Arjun Suresh
+        Input: uint64_t - trace stop index
+       Output: None
+       return: None
+  Description: Sets the trace stop index
+  Date         Initials    Description
+30-Aug-2022    AS          Initial
+****************************************************************************/
+void OpenCSDInterface::SetTraceStopIdx(uint64_t index)
+{
+    return mp_logger->SetTraceStopIdx(index);
+}
+
+/****************************************************************************
+     Function: ResetFirstValidIdxFlag
+     Engineer: Arjun Suresh
+        Input: None
+       Output: None
+       return: None
+  Description: Resets first valid index found flag
+  Date         Initials    Description
+30-Aug-2022    AS          Initial
+****************************************************************************/
+void OpenCSDInterface::ResetFirstValidIdxFlag()
+{
+    mp_logger->ResetFirstValidIdxFlag();
+}
+
+/****************************************************************************
+     Function: CloseLogFile
+     Engineer: Arjun Suresh
+        Input: None
+       Output: None
+       return: None
+  Description: Closes the current log file
+  Date         Initials    Description
+30-Aug-2022    AS          Initial
+****************************************************************************/
+void OpenCSDInterface::CloseLogFile()
+{
+    ocsd_datapath_resp_t err = mp_tree->TraceDataIn(OCSD_OP_FLUSH, 0, 0, NULL, NULL);
+    if (mp_logger)
+        mp_logger->CloseLogFile();
+}
+
+/****************************************************************************
+     Function: ResetFirstValidIdx
+     Engineer: Arjun Suresh
+        Input: None
+       Output: None
+       return: None
+  Description: Resets first valid index
+  Date         Initials    Description
+30-Aug-2022    AS          Initial
+****************************************************************************/
+void OpenCSDInterface::ResetFirstValidIdx()
+{
+    mp_logger->ResetFirstValidIdx();
+}
+/****************************************************************************
+     Function: FirstValidIndexFound
+     Engineer: Arjun Suresh
+        Input: None
+       Output: None
+       return: bool - first valid index found flag
+  Description: Check if first valid index found
+  Date         Initials    Description
+30-Aug-2022    AS          Initial
+****************************************************************************/
+bool OpenCSDInterface::FirstValidIndexFound()
+{
+    return mp_logger->FirstValidIndexFound();
+}
+
+/****************************************************************************
+     Function: SetTraceStartIdx
+     Engineer: Arjun Suresh
+        Input: idx - trace start index
+       Output: None
+       return: None
+  Description: Sets trace start index
+  Date         Initials    Description
+30-Aug-2022    AS          Initial
+****************************************************************************/
+void OpenCSDInterface::SetTraceStartIdx(uint64_t index)
+{
+    mp_logger->SetTraceStartIdx(index);
+}
+
+/****************************************************************************
+     Function: GetLastValidIdx
+     Engineer: Arjun Suresh
+        Input: None
+       Output: None
+       return: uint64_t
+  Description: Returns last valid index
+  Date         Initials    Description
+30-Aug-2022    AS          Initial
+****************************************************************************/
+uint64_t OpenCSDInterface::GetLastValidIdx()
+{
+    return mp_logger->GetLastValidIdx();
+}
+
+/****************************************************************************
+     Function: GetLastPEContextIdx
+     Engineer: Arjun Suresh
+        Input: None
+       Output: None
+       return: uint64_t
+  Description: Returns last sync index
+  Date         Initials    Description
+30-Aug-2022    AS          Initial
+****************************************************************************/
+uint64_t OpenCSDInterface::GetLastPEContextIdx()
+{
+    return mp_logger->GetLastPEContextIdx();
+}
+
 /****************************************************************************
      Function: DestroyDecodeTree
      Engineer: Arjun Suresh
@@ -604,6 +779,7 @@ void OpenCSDInterface::DestroyDecodeTree()
         mp_logger = NULL;
     }
 }
+
 /****************************************************************************
      Function: ~OpenCSDInterface
      Engineer: Arjun Suresh
@@ -643,62 +819,138 @@ TraceLogger::TraceLogger(const std::string log_file_path, const bool split_files
     m_update_cycle_cnt(false),
     m_first_valid_idx_found(false),
     m_first_valid_trace_idx(0),
+    m_last_valid_trace_idx(ULLONG_MAX),
     m_trace_stop_idx(ULLONG_MAX),
     m_trace_start_idx(0),
     m_trace_stop_at_idx_flag(false),
     m_trace_start_from_idx_flag(false),
     m_last_pe_context_idx(0)
 {
+
 }
-void TraceLogger::ResetLogger()
+
+
+/****************************************************************************
+     Function: FirstValidIndexFound
+     Engineer: Arjun Suresh
+        Input: None
+       Output: None
+       return: bool - first valid index found flag
+  Description: Check if first valid index found
+  Date         Initials    Description
+30-Aug-2022    AS          Initial
+****************************************************************************/
+bool TraceLogger::FirstValidIndexFound()
 {
-    //m_first_valid_trace_idx = 0;
+    return m_first_valid_idx_found;
+}
+
+/****************************************************************************
+     Function: ResetFirstValidIdx
+     Engineer: Arjun Suresh
+        Input: None
+       Output: None
+       return: None
+  Description: Resets first valid index
+  Date         Initials    Description
+30-Aug-2022    AS          Initial
+****************************************************************************/
+void TraceLogger::ResetFirstValidIdx()
+{
+    m_first_valid_trace_idx = 0;
     m_first_valid_idx_found = false;
 }
+
+/****************************************************************************
+     Function: SetTraceStopIdx
+     Engineer: Arjun Suresh
+        Input: uint64_t - trace stop index
+       Output: None
+       return: None
+  Description: Sets the trace stop index
+  Date         Initials    Description
+30-Aug-2022    AS          Initial
+****************************************************************************/
 void TraceLogger::SetTraceStopIdx(uint64_t index)
 {
     m_trace_stop_idx = index;
 }
-void TraceLogger::ResetTraceStopIdxFlag()
+
+/****************************************************************************
+     Function: ResetFirstValidIdxFlag
+     Engineer: Arjun Suresh
+        Input: None
+       Output: None
+       return: None
+  Description: Resets first valid index found flag
+  Date         Initials    Description
+30-Aug-2022    AS          Initial
+****************************************************************************/
+void TraceLogger::ResetFirstValidIdxFlag()
 {
     m_first_valid_idx_found = false;
 }
 
+/****************************************************************************
+     Function: GetLastValidIdx
+     Engineer: Arjun Suresh
+        Input: None
+       Output: None
+       return: uint64_t
+  Description: Returns last valid index
+  Date         Initials    Description
+30-Aug-2022    AS          Initial
+****************************************************************************/
 uint64_t TraceLogger::GetLastValidIdx()
 {
     return m_last_valid_trace_idx;
 }
 
+/****************************************************************************
+     Function: SetTraceStartIdx
+     Engineer: Arjun Suresh
+        Input: idx - trace start index
+       Output: None
+       return: None
+  Description: Sets trace start index
+  Date         Initials    Description
+30-Aug-2022    AS          Initial
+****************************************************************************/
 void TraceLogger::SetTraceStartIdx(uint64_t idx)
 {
-   // m_trace_start_from_idx_flag = true;
     m_trace_start_idx = idx;
 }
 
+/****************************************************************************
+     Function: GetFirstValidIdx
+     Engineer: Arjun Suresh
+        Input: None
+       Output: None
+       return: None
+  Description: Returns first valid index
+  Date         Initials    Description
+30-Aug-2022    AS          Initial
+****************************************************************************/
 uint64_t TraceLogger::GetFirstValidIdx()
 {
     return m_first_valid_trace_idx;
 }
 
+/****************************************************************************
+     Function: GetLastPEContextIdx
+     Engineer: Arjun Suresh
+        Input: None
+       Output: None
+       return: uint64_t
+  Description: Returns last sync index
+  Date         Initials    Description
+30-Aug-2022    AS          Initial
+****************************************************************************/
 uint64_t TraceLogger::GetLastPEContextIdx()
 {
     return m_last_pe_context_idx;
 }
 
-uint64_t OpenCSDInterface::GetFirstValidIdx()
-{
-    return mp_logger->GetFirstValidIdx();
-}
-
-void OpenCSDInterface::SetTraceStopIdx(uint64_t index)
-{
-    return mp_logger->SetTraceStopIdx(index);
-}
-
-void OpenCSDInterface::ResetTraceStopIdxFlag()
-{
-    mp_logger->ResetTraceStopIdxFlag();
-}
 /****************************************************************************
      Function: OpenLogFile
      Engineer: Arjun Suresh
@@ -776,22 +1028,19 @@ ocsd_datapath_resp_t TraceLogger::TraceElemIn(const ocsd_trc_index_t index_sop,
         m_last_valid_trace_idx = index_sop;
     if (elem.elem_type == OCSD_GEN_TRC_ELEM_PE_CONTEXT)
     {
-       // printf("\nSync PE Context[%d]", index_sop);
         m_last_pe_context_idx = index_sop;
     }
     if (m_first_valid_idx_found == false && elem.elem_type != OCSD_GEN_TRC_ELEM_NO_SYNC)
     {
         m_first_valid_trace_idx = index_sop;
         m_first_valid_idx_found = true;
-        printf("\nSetting First Valid Trace Idx [%u]", m_first_valid_trace_idx);
     }
-    if (index_sop < m_trace_start_idx) // Original if (index_sop <= m_trace_start_idx)
+    if (index_sop < m_trace_start_idx)
     {
         return OCSD_RESP_CONT;
     }
-    if (index_sop > m_trace_stop_idx)  // Original  if (index_sop >= m_trace_stop_idx)
+    if (index_sop > m_trace_stop_idx)
     {
-        //printf("\nReached Stop Trace Idx [%u]", index_sop);
         return OCSD_RESP_REACHED_STOP_IDX;
     }
 
@@ -802,7 +1051,7 @@ ocsd_datapath_resp_t TraceLogger::TraceElemIn(const ocsd_trc_index_t index_sop,
     {
         if (elem.context.ctxt_id_valid)
         {
-            //fprintf(m_fp_decode_out, "%d %s%u\n", index_sop, "PECC:CID=", elem.context.context_id);
+//            fprintf(m_fp_decode_out, "%d %s%u\n", index_sop, "PECC:CID=", elem.context.context_id);
             m_rows_in_file++;
         }
     }
