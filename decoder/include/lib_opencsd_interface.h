@@ -141,7 +141,7 @@ public:
     // Function to decode the trace file
     virtual TyTraceDecodeError DecodeTrace(const char* trace_in_file);
     // Function to decode trace buffer
-    virtual TyTraceDecodeError DecodeTraceBuffer(uint8_t* buffer, uint32_t size, uint32_t block_idx);
+    virtual TyTraceDecodeError DecodeTraceBuffer(uint8_t* buffer, uint64_t size, uint64_t block_idx);
     // Function to get the created decode tree object
     virtual TyTraceDecodeError SetPacketMonitorCallback(const uint8_t CSID, void* p_fn_callback_data, const void* p_context);
     // Set the packet monitor sink

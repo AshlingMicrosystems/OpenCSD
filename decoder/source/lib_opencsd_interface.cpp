@@ -499,17 +499,17 @@ TyTraceDecodeError OpenCSDInterface::ResetDecoder()
   Date         Initials    Description
 30-Aug-2022    AS          Initial
 ****************************************************************************/
-TyTraceDecodeError OpenCSDInterface::DecodeTraceBuffer(uint8_t* trace_buffer, uint32_t size, uint32_t block_idx)
+TyTraceDecodeError OpenCSDInterface::DecodeTraceBuffer(uint8_t* trace_buffer, uint64_t size, uint64_t block_idx)
 {
     if(trace_buffer == NULL)
     {
         TRACE_DECODER_CANNOT_OPEN_FILE;
     }
     ocsd_datapath_resp_t dataPathResp = OCSD_RESP_CONT;
-    uint32_t nBuffRead = size;                           // get count of data loaded.
+    uint64_t nBuffRead = size;                           // get count of data loaded.
     uint32_t nBuffProcessed = 0;                        // amount processed in this buffer.
     uint32_t nUsedThisTime = 0;
-    uint32_t trace_index = 0;
+    uint64_t trace_index = 0;
 
     // process the current buffer load until buffer done, or fatal error occurs
     while ((nBuffProcessed < nBuffRead) && !OCSD_DATA_RESP_IS_FATAL(dataPathResp))
