@@ -1051,14 +1051,14 @@ ocsd_datapath_resp_t TraceLogger::TraceElemIn(const ocsd_trc_index_t index_sop,
     {
         if (elem.context.ctxt_id_valid)
         {
-//            fprintf(m_fp_decode_out, "%d %s%u\n", index_sop, "PECC:CID=", elem.context.context_id);
+            fprintf(m_fp_decode_out, "%s%u\n", "PECC:CID=", elem.context.context_id);
             m_rows_in_file++;
         }
     }
     break;
     case OCSD_GEN_TRC_ELEM_ADDR_NACC:
     {
-        fprintf(m_fp_decode_out, "%u,%u,%u,", 0, ((trc_chan_id & 0x0F) >> 1), (elem.context.ctxt_id_valid ? elem.context.context_id : 0));
+        fprintf(m_fp_decode_out, "%u,%u,%u,", index_sop, ((trc_chan_id & 0x0F) >> 1), (elem.context.ctxt_id_valid ? elem.context.context_id : 0));
         if (m_update_cycle_cnt)
         {
             fprintf(m_fp_decode_out, "%u,", m_cycle_cnt);
@@ -1086,18 +1086,18 @@ ocsd_datapath_resp_t TraceLogger::TraceElemIn(const ocsd_trc_index_t index_sop,
             fprintf(m_fp_decode_out, "%u,%u,%u,", index_sop, ((trc_chan_id & 0x0F) >> 1), (elem.context.ctxt_id_valid ? elem.context.context_id : 0));
             if (m_update_cycle_cnt)
             {
-                fprintf(m_fp_decode_out, "%u,", 0);
+                fprintf(m_fp_decode_out, "%u,", m_cycle_cnt);
                 m_update_cycle_cnt = false;
             }
             else if (elem.has_cc && i == start_idx)
             {
-                fprintf(m_fp_decode_out, "%u,", 0);
+                fprintf(m_fp_decode_out, "%u,", elem.cycle_count);
             }
             else
             {
                 fprintf(m_fp_decode_out, "%u,", 0);
             }
-            fprintf(m_fp_decode_out, "%llu,%x,%x,%u,%u,", 0, elem.st_addr, elem.en_addr, elem.num_instr_range, elem.last_instr_sz);
+            fprintf(m_fp_decode_out, "%llu,%x,%x,%u,%u,", m_last_timestamp, elem.st_addr, elem.en_addr, elem.num_instr_range, elem.last_instr_sz);
             if ((elem.context.exception_level > ocsd_EL_unknown) && (elem.context.el_valid) && m_out_ex_level)
             {
                 fprintf(m_fp_decode_out, "%s%d", "EL", (int) (elem.context.exception_level));
@@ -1129,7 +1129,7 @@ ocsd_datapath_resp_t TraceLogger::TraceElemIn(const ocsd_trc_index_t index_sop,
     {
         if (elem.has_cc)
         {
-            fprintf(m_fp_decode_out, "%d CC = %u\n", index_sop, elem.cycle_count);
+            fprintf(m_fp_decode_out, "CC = %u\n", elem.cycle_count);
             m_cycle_cnt = elem.cycle_count;
             m_update_cycle_cnt = true;
         }
@@ -1138,7 +1138,7 @@ ocsd_datapath_resp_t TraceLogger::TraceElemIn(const ocsd_trc_index_t index_sop,
     case OCSD_GEN_TRC_ELEM_TIMESTAMP:
     {
         m_last_timestamp = elem.timestamp;
-        fprintf(m_fp_decode_out, "%d %s%llu\n", index_sop, "TS:", m_last_timestamp);
+        fprintf(m_fp_decode_out, "%s%llu\n", "TS:", m_last_timestamp);
         m_rows_in_file++;
     }
     break;
