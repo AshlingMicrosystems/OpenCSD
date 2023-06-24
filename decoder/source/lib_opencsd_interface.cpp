@@ -1058,7 +1058,7 @@ ocsd_datapath_resp_t TraceLogger::TraceElemIn(const ocsd_trc_index_t index_sop,
     break;
     case OCSD_GEN_TRC_ELEM_ADDR_NACC:
     {
-        fprintf(m_fp_decode_out, "%u,%u,%u,", index_sop, ((trc_chan_id & 0x0F) >> 1), (elem.context.ctxt_id_valid ? elem.context.context_id : 0));
+        fprintf(m_fp_decode_out, "%u,%u,%u,", 0, ((trc_chan_id & 0x0F) >> 1), (elem.context.ctxt_id_valid ? elem.context.context_id : 0));
         if (m_update_cycle_cnt)
         {
             fprintf(m_fp_decode_out, "%u,", m_cycle_cnt);
@@ -1083,10 +1083,10 @@ ocsd_datapath_resp_t TraceLogger::TraceElemIn(const ocsd_trc_index_t index_sop,
         uint32_t step = elem.traced_ins.ptr_addresses ? 1 : elem.last_instr_sz;
         for (uint64_t i = start_idx; i < end_idx; i+=step)
         {
-            fprintf(m_fp_decode_out, "%u,%u,%u,", index_sop, ((trc_chan_id & 0x0F) >> 1), (elem.context.ctxt_id_valid ? elem.context.context_id : 0));
+            fprintf(m_fp_decode_out, "%u,%u,%u,", 0, ((trc_chan_id & 0x0F) >> 1), (elem.context.ctxt_id_valid ? elem.context.context_id : 0));
             if (m_update_cycle_cnt)
             {
-                fprintf(m_fp_decode_out, "%u,", m_cycle_cnt);
+                fprintf(m_fp_decode_out, "%u,", 0);
                 m_update_cycle_cnt = false;
             }
             else if (elem.has_cc && i == start_idx)
@@ -1097,7 +1097,7 @@ ocsd_datapath_resp_t TraceLogger::TraceElemIn(const ocsd_trc_index_t index_sop,
             {
                 fprintf(m_fp_decode_out, "%u,", 0);
             }
-            fprintf(m_fp_decode_out, "%llu,%x,%x,%u,%u,", m_last_timestamp, elem.st_addr, elem.en_addr, elem.num_instr_range, elem.last_instr_sz);
+            fprintf(m_fp_decode_out, "%llu,%x,%x,%u,%u,", 0, elem.st_addr, elem.en_addr, elem.num_instr_range, elem.last_instr_sz);
             if ((elem.context.exception_level > ocsd_EL_unknown) && (elem.context.el_valid) && m_out_ex_level)
             {
                 fprintf(m_fp_decode_out, "%s%d", "EL", (int) (elem.context.exception_level));
