@@ -170,7 +170,6 @@ Global
 		{2E16EEA9-AD9D-4C6C-A685-97A84690DC6A}.Release-dll|Win32.ActiveCfg = Release|Win32
 		{2E16EEA9-AD9D-4C6C-A685-97A84690DC6A}.Release-dll|Win32.Build.0 = Release|Win32
 		{2E16EEA9-AD9D-4C6C-A685-97A84690DC6A}.Release-dll|x64.ActiveCfg = Release|x64
-		{2E16EEA9-AD9D-4C6C-A685-97A84690DC6A}.Release-dll|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
