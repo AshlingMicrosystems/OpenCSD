@@ -467,7 +467,8 @@ TyTraceDecodeError OpenCSDInterface::SetPacketMonitorCallback(const uint8_t CSID
 TyTraceDecodeError OpenCSDInterface::SetEOT()
 {
     ocsd_datapath_resp_t err = mp_tree->TraceDataIn(OCSD_OP_EOT, 0, 0, 0, 0);
-    mp_logger ? mp_logger->CloseLogFile() : NULL;
+    if (mp_logger)
+        mp_logger->CloseLogFile();
     return (OCSD_DATA_RESP_IS_FATAL(err)) ? TRACE_DECODER_DATA_PATH_FATAL_ERR : TRACE_DECODER_OK;
 }
 
@@ -484,7 +485,8 @@ TyTraceDecodeError OpenCSDInterface::SetEOT()
 TyTraceDecodeError OpenCSDInterface::ResetDecoder()
 {
     ocsd_datapath_resp_t err = mp_tree->TraceDataIn(OCSD_OP_RESET, 0, 0, 0, 0);
-    mp_logger ? mp_logger->CloseLogFile() : NULL;
+    if (mp_logger)
+        mp_logger->CloseLogFile();
     return (OCSD_DATA_RESP_IS_FATAL(err)) ? TRACE_DECODER_DATA_PATH_FATAL_ERR : TRACE_DECODER_OK;
 }
 
@@ -599,7 +601,8 @@ TyTraceDecodeError OpenCSDInterface::DecodeTrace(const char* trace_in_file)
         if (OCSD_DATA_RESP_IS_FATAL(dataPathResp))
         {
             in.close();
-            mp_logger ? mp_logger->CloseLogFile() : NULL;
+            if (mp_logger)
+                mp_logger->CloseLogFile();
             return TRACE_DECODER_DATA_PATH_FATAL_ERR;
         }
         else
@@ -610,7 +613,8 @@ TyTraceDecodeError OpenCSDInterface::DecodeTrace(const char* trace_in_file)
 
         // close the input file.
         in.close();
-        mp_logger ? mp_logger->CloseLogFile() : NULL;
+        if (mp_logger)
+            mp_logger->CloseLogFile();
     }
     else
     {
