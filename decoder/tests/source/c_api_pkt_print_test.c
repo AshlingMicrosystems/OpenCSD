@@ -76,9 +76,9 @@ static const char *usr_snapshot_path = 0;
 #define MAX_TRACE_FILE_PATH_LEN 512
 
 /* trace data and memory file dump names and values - taken from snapshot metadata */
-const char *trace_data_filename = "cstrace.bin";
+const char *trace_data_filename = "ETR_Wrap.bin";
 const char *stmtrace_data_filename = "cstraceitm.bin";
-const char *memory_dump_filename = "stratix10-a53-sum.elf";
+const char *memory_dump_filename = "cyclonev-a9-sum.elf";
 ocsd_vaddr_t mem_dump_address=0xFFFFFFC000081000;
 const ocsd_vaddr_t mem_dump_address_tc2=0xC0008000;
 
@@ -100,7 +100,7 @@ typedef enum _test_op {
 
 // Default test operations
 static test_op_t op = TEST_PKT_DECODE;   // default operation is to packet print
-static ocsd_trace_protocol_t test_protocol = OCSD_PROTOCOL_ETMV4I; // ETMV4 protocl
+static ocsd_trace_protocol_t test_protocol = OCSD_PROTOCOL_PTM; // ETMV4 protocl
 static uint8_t test_trc_id_override = 0x00; // no trace ID override.
 
 /* external decoder testing */
@@ -408,20 +408,25 @@ static ocsd_err_t create_test_memory_acc(dcd_tree_handle_t handle)
             //    region_list[i].file_offset = (i * mem_file_size/4) +  i0adjust;
             //}
             // Agilex
-            region_list[0].start_address = 0xFFE00300;
-            region_list[0].file_offset = 0x300;
-            region_list[0].region_size = 1800;
-            
-            region_list[1].start_address = 0xFFE00A08;
-            region_list[1].file_offset = 0xA08;
-            region_list[1].region_size = 52;
+            //region_list[0].start_address = 0xFFE00300;
+            //region_list[0].file_offset = 0x300;
+            //region_list[0].region_size = 1800;
+            //
+            //region_list[1].start_address = 0xFFE00A08;
+            //region_list[1].file_offset = 0xA08;
+            //region_list[1].region_size = 52;
 
             // Arria
            // region_list[0].start_address = 0x00000000FFE00400;
            // region_list[0].file_offset = 0x400;
            // region_list[0].region_size = 0x78;
 
-            ret = ocsd_dt_add_binfile_region_mem_acc(handle,&region_list[0],2,OCSD_MEM_SPACE_ANY,mem_file_path);
+            // Cyclone
+            region_list[0].start_address = 0xFFFF0000;
+            region_list[0].file_offset = 0x10000;
+            region_list[0].region_size = 120;
+
+            ret = ocsd_dt_add_binfile_region_mem_acc(handle,&region_list[0],1,OCSD_MEM_SPACE_ANY,mem_file_path);
         }
         else 
             ret  = OCSD_ERR_MEM_ACC_FILE_NOT_FOUND;

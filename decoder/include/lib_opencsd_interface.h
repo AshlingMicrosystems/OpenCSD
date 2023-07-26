@@ -55,7 +55,6 @@ class TraceLogger : public ITrcGenElemIn
 protected:
 private:
     FILE* m_fp_decode_out;
-    const std::string m_log_file_path;
     std::string m_curr_logfile_name;
     uint32_t m_file_cnt;
     uint32_t m_rows_in_file;
@@ -76,7 +75,7 @@ private:
     bool m_update_timestamp;
 public:
     // Constructor
-    TraceLogger(const std::string log_file_path, const bool split_files = false, const uint32_t max_rows_in_file = DEAFAULT_MAX_TRACE_FILE_ROW_CNT);
+    TraceLogger(const char* log_file_path, const bool split_files = false, const uint32_t max_rows_in_file = DEAFAULT_MAX_TRACE_FILE_ROW_CNT);
     // Destructor
     ~TraceLogger();
     // Overriden function to implement custom formatting

@@ -809,13 +809,12 @@ OpenCSDInterface::~OpenCSDInterface()
   Date         Initials    Description
 30-Aug-2022    AS          Initial
 ****************************************************************************/
-TraceLogger::TraceLogger(const std::string log_file_path, const bool split_files, const uint32_t max_rows_in_file)
+TraceLogger::TraceLogger(const char* log_file_path, const bool split_files, const uint32_t max_rows_in_file)
     : m_fp_decode_out(NULL),
     m_file_cnt(0),
     m_rows_in_file(0),
     m_split_files(split_files),
     m_max_rows_in_file(max_rows_in_file),
-    m_log_file_path(log_file_path),
     m_curr_logfile_name(log_file_path),
     m_out_ex_level(true),
     m_cycle_cnt(0),
