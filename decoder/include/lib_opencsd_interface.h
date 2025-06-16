@@ -141,6 +141,8 @@ public:
     TyTraceDecodeError FlushDataOverSocket();
     // Updates the logger format option
     virtual void SetLoggerFormatOption(uint32_t loggerFormatOption = 0);
+    // Gets the logger format option
+    uint32_t getLoggerFormatOption();
 };
 
 // Class that provides the trace decoding functionality
@@ -185,7 +187,7 @@ public:
     // Function to get the created decode tree object
     virtual TyTraceDecodeError SetPacketMonitorCallback(const uint8_t CSID, void* p_fn_callback_data, const void* p_context);
     // Set the packet monitor sink
-    virtual TyTraceDecodeError SetPacketMonitorSink(const uint8_t CSID, ITrcTypedBase* pDataInSink, uint32_t config_flags);
+    virtual TyTraceDecodeError SetPacketMonitorSink(const uint8_t CSID, ITrcTypedBase* pDataInSink, uint32_t config_flags, uint32_t loggerFormatOption = 0);
     // Sets the STM channels used for text data
     virtual void SetSTMChannelInfo(std::vector<uint32_t> &text_channels);
     // Mark the end of trace

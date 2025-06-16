@@ -435,7 +435,7 @@ TyTraceDecodeError OpenCSDInterface::AddMemoryAccessCallback(const ocsd_vaddr_t 
   Date         Initials    Description
 30-Aug-2022    AS          Initial
 ****************************************************************************/
-TyTraceDecodeError OpenCSDInterface::SetPacketMonitorSink(const uint8_t CSID, ITrcTypedBase* pDataInSink, uint32_t config_flags)
+TyTraceDecodeError OpenCSDInterface::SetPacketMonitorSink(const uint8_t CSID, ITrcTypedBase* pDataInSink, uint32_t config_flags, uint32_t loggerFormatOption)
 {
     ocsd_err_t err = OCSD_OK;
     DecodeTreeElement* p_elem = mp_tree->getDecoderElement(CSID);
@@ -459,6 +459,20 @@ TyTraceDecodeError OpenCSDInterface::SetPacketMonitorSink(const uint8_t CSID, IT
         if (err != OCSD_OK)
         {
             return TRACE_DECODER_ERR;
+        }
+
+        // check if trace packet level prints are needed
+        if (loggerFormatOption == 1)
+        {
+            // Create a new packet printer
+            ItemPrinter* pPrinter = nullptr;
+            // Adds the packet printer to the decode tree
+            err = mp_tree->addPacketPrinter(CSID, false, &pPrinter);
+            // check for error
+            if (err != OCSD_OK)
+            {
+                return TRACE_DECODER_ERR;
+            }
         }
     }
     return TRACE_DECODER_OK;
@@ -1838,8 +1852,7 @@ ocsd_datapath_resp_t TraceLogger::TraceElemIn(const ocsd_trc_index_t index_sop,
 /****************************************************************************
      Function: SetLoggerFormatOption
      Engineer: Ashwin Vinoo
-        Input: None
-       Output: None
+        Input: loggerFormatOption: the logger format option number
        return: void
   Description: Sets the logger format option. Default value is 0.
   Date         Initials    Description
@@ -1848,4 +1861,18 @@ ocsd_datapath_resp_t TraceLogger::TraceElemIn(const ocsd_trc_index_t index_sop,
 void TraceLogger::SetLoggerFormatOption(uint32_t loggerFormatOption)
 {
     this->m_loggerFormatOption = loggerFormatOption;
+}
+
+/****************************************************************************
+     Function: getLoggerFormatOption
+     Engineer: Ashwin Vinoo
+        Input: void
+       return: loggerFormatOption: the logger format option number
+  Description: Gets the logger format option
+  Date         Initials    Description
+16-Jun-2025    AV          Initial
+****************************************************************************/
+uint32_t TraceLogger::getLoggerFormatOption()
+{
+    return this-> m_loggerFormatOption;
 }
