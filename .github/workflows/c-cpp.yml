@@ -1,0 +1,44 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+      
+    # Added OpenCSD decoder build steps
+    - name: Build OpenCSD decoder
+      run: |
+        # Navigate directly to decoder build directory
+        cd "$GITHUB_WORKSPACE/opencsd/decoder/build/linux"
+        # Clean and build libraries
+        make -f makefile clean
+        make -f makefile libs
+    
+    # Prepare artifacts directory
+    - name: Prepare artifacts
+      run: |
+        # Create artifacts directory
+        mkdir -p "$GITHUB_WORKSPACE/artifacts/OpenCSD"
+        
+        # Copy the built library
+        cp -R "$GITHUB_WORKSPACE/opencsd/decoder/lib/builddir/libopencsd.so" "$GITHUB_WORKSPACE/artifacts/OpenCSD/libopencsd.so"
+        
+        # Copy the configuration file
+        cp -R "$GITHUB_WORKSPACE/utility/trace/coresight/ini/CoreSight_Trace_Config.ini" "$GITHUB_WORKSPACE/artifacts/OpenCSD/CoreSight_Trace_Config.ini"
+    
+    # Upload the artifacts
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: OpenCSD-libs
+        path: ${{ github.workspace }}/artifacts/OpenCSD/
