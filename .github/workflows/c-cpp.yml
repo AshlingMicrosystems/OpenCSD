@@ -50,7 +50,7 @@ jobs:
         cp -R "$GITHUB_WORKSPACE/decoder/lib/builddir/libopencsd.so" "$GITHUB_WORKSPACE/artifacts/OpenCSD/libopencsd.so"
         
         # Copy the configuration file
-        cp -R "$GITHUB_WORKSPACE/utility/trace/coresight/ini/CoreSight_Trace_Config.ini" "$GITHUB_WORKSPACE/artifacts/OpenCSD/CoreSight_Trace_Config.ini"
+        # cp -R "$GITHUB_WORKSPACE/utility/trace/coresight/ini/CoreSight_Trace_Config.ini" "$GITHUB_WORKSPACE/artifacts/OpenCSD/CoreSight_Trace_Config.ini"
     
     # Upload the artifacts
     - name: Upload artifacts
