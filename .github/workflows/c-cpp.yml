@@ -13,13 +13,22 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    
       
     # Added OpenCSD decoder build steps
     - name: Build OpenCSD decoder
       run: |
+        # Print current directory and list contents
+        echo "Current directory:"
+        pwd
+        echo "Directory contents:"
+        ls -la
+        echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
+        
         # Navigate directly to decoder build directory
-        cd "$GITHUB_WORKSPACE/opencsd/decoder/build/linux"
+        cd "$GITHUB_WORKSPACE/decoder/build/linux"
+        echo "Changed to decoder build directory:"
+        pwd
+        
         # Clean and build libraries
         make -f makefile clean
         make -f makefile libs
@@ -27,11 +36,18 @@ jobs:
     # Prepare artifacts directory
     - name: Prepare artifacts
       run: |
+        # Print current directory and check build output
+        echo "Current directory for artifacts preparation:"
+        pwd
+        echo "Checking decoder lib directory:"
+        ls -la "$GITHUB_WORKSPACE/decoder/lib/" || echo "decoder/lib directory not found"
+        ls -la "$GITHUB_WORKSPACE/decoder/lib/builddir/" || echo "decoder/lib/builddir directory not found"
+        
         # Create artifacts directory
         mkdir -p "$GITHUB_WORKSPACE/artifacts/OpenCSD"
         
         # Copy the built library
-        cp -R "$GITHUB_WORKSPACE/opencsd/decoder/lib/builddir/libopencsd.so" "$GITHUB_WORKSPACE/artifacts/OpenCSD/libopencsd.so"
+        cp -R "$GITHUB_WORKSPACE/decoder/lib/builddir/libopencsd.so" "$GITHUB_WORKSPACE/artifacts/OpenCSD/libopencsd.so"
         
         # Copy the configuration file
         cp -R "$GITHUB_WORKSPACE/utility/trace/coresight/ini/CoreSight_Trace_Config.ini" "$GITHUB_WORKSPACE/artifacts/OpenCSD/CoreSight_Trace_Config.ini"
