@@ -5,13 +5,26 @@
 
 tests:
 
-  # ----- UNIT TESTS -----
-  unit_tests:
-    OpenCSD_library_test:
-      repositories:
-        - name: OpenCSD
-          components:
-            - name: libopencsd_dll
+ #------------------------------------ SOFTWARE TESTS ------------------------------------
+  software:
 
-  # ----- INTEGRATION TESTS -----
-  integration_tests:
+    # ----- UNIT TESTS -----
+    unit:
+
+      OpenCSD_library_test:
+        repositories:
+          - name: OpenCSD
+            components:
+              - libopencsd_dll
+
+    # ----- INTEGRATION TESTS -----
+    integration:
+
+ #------------------------------------ HARDWARE TESTS ------------------------------------
+  hardware:
+
+    # ----- UNIT TESTS -----
+    unit:
+
+    # ----- INTEGRATION TESTS -----
+    integration:
