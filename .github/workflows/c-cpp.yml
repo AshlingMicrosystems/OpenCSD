@@ -5,10 +5,10 @@ on:
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
+  workflow_dispatch:    # 👈 Added to allow manual/API triggers (required for GitLab to call it)
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -17,7 +17,6 @@ jobs:
     # Added OpenCSD decoder build steps
     - name: Build OpenCSD decoder
       run: |
-        # Print current directory and list contents
         echo "Current directory:"
         pwd
         echo "Directory contents:"
@@ -36,25 +35,28 @@ jobs:
     # Prepare artifacts directory
     - name: Prepare artifacts
       run: |
-        # Print current directory and check build output
+        echo "Preparing artifacts..."
         echo "Current directory for artifacts preparation:"
         pwd
-        echo "Checking decoder lib directory:"
-        ls -la "$GITHUB_WORKSPACE/decoder/lib/" || echo "decoder/lib directory not found"
-        ls -la "$GITHUB_WORKSPACE/decoder/lib/builddir/" || echo "decoder/lib/builddir directory not found"
+
+        # Ensure decoder output directory exists
+        if [ ! -d "$GITHUB_WORKSPACE/decoder/lib/builddir" ]; then
+          echo "❌ decoder/lib/builddir directory not found!"
+          exit 1
+        fi
         
         # Create artifacts directory
         mkdir -p "$GITHUB_WORKSPACE/artifacts/OpenCSD"
         
         # Copy the built library
-        cp -R "$GITHUB_WORKSPACE/decoder/lib/builddir/libopencsd.so" "$GITHUB_WORKSPACE/artifacts/OpenCSD/libopencsd.so"
+        cp "$GITHUB_WORKSPACE/decoder/lib/builddir/libopencsd.so" \
+           "$GITHUB_WORKSPACE/artifacts/OpenCSD/libopencsd.so"
         
-        # Copy the configuration file
-        # cp -R "$GITHUB_WORKSPACE/utility/trace/coresight/ini/CoreSight_Trace_Config.ini" "$GITHUB_WORKSPACE/artifacts/OpenCSD/CoreSight_Trace_Config.ini"
-    
+        echo "✅ Artifacts prepared successfully."
+
     # Upload the artifacts
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: OpenCSD-libs
+        name: OpenCSD-libs              # 👈 Artifact name (used by GitLab to download)
         path: ${{ github.workspace }}/artifacts/OpenCSD/
