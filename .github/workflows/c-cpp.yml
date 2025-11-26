@@ -5,7 +5,7 @@ on:
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
-  workflow_dispatch:    # 👈 Added to allow manual/API triggers (required for GitLab to call it)
+  workflow_dispatch:    # Allows manual triggers via GitHub UI or API; GitLab integration requires a webhook or API call to GitHub
 
 jobs:
   build:
