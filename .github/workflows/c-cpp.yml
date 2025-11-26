@@ -17,16 +17,8 @@ jobs:
     # Added OpenCSD decoder build steps
     - name: Build OpenCSD decoder
       run: |
-        echo "Current directory:"
-        pwd
-        echo "Directory contents:"
-        ls -la
-        echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
-        
         # Navigate directly to decoder build directory
         cd "$GITHUB_WORKSPACE/decoder/build/linux"
-        echo "Changed to decoder build directory:"
-        pwd
         
         # Build libraries
         make -f makefile libs
