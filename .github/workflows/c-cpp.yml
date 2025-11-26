@@ -28,8 +28,7 @@ jobs:
         echo "Changed to decoder build directory:"
         pwd
         
-        # Clean and build libraries
-        make -f makefile clean
+        # Build libraries
         make -f makefile libs
     
     # Prepare artifacts directory
