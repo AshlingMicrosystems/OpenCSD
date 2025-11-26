@@ -1,0 +1,53 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:    # Allows manual triggers via GitHub UI or API; GitLab integration requires a webhook or API call to GitHub
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      
+    # Added OpenCSD decoder build steps
+    - name: Build OpenCSD decoder
+      run: |
+        # Navigate directly to decoder build directory
+        cd "$GITHUB_WORKSPACE/decoder/build/linux"
+        
+        # Build libraries
+        make -f makefile libs
+    
+    # Prepare artifacts directory
+    - name: Prepare artifacts
+      run: |
+        echo "Preparing artifacts..."
+        echo "Current directory for artifacts preparation:"
+        pwd
+
+        # Ensure decoder output directory exists
+        if [ ! -d "$GITHUB_WORKSPACE/decoder/lib/builddir" ]; then
+          echo "❌ decoder/lib/builddir directory not found!"
+          exit 1
+        fi
+        
+        # Create artifacts directory
+        mkdir -p "$GITHUB_WORKSPACE/artifacts/OpenCSD"
+        
+        # Copy the built library
+        cp "$GITHUB_WORKSPACE/decoder/lib/builddir/libopencsd.so" \
+           "$GITHUB_WORKSPACE/artifacts/OpenCSD/libopencsd.so"
+        
+        echo "✅ Artifacts prepared successfully."
+
+    # Upload the artifacts
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: OpenCSD-libs              # 👈 Artifact name (used by GitLab to download)
+        path: ${{ github.workspace }}/artifacts/OpenCSD/
