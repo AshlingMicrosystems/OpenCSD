@@ -1452,7 +1452,7 @@ ocsd_datapath_resp_t TraceLogger::TraceElemIn(const ocsd_trc_index_t index_sop,
         break;
         case OCSD_GEN_TRC_ELEM_ADDR_NACC:
         {
-            fprintf(m_fp_decode_out, "%u,%u,%u,", 0, ((trc_chan_id & 0x0F) >> 1), (elem.context.ctxt_id_valid ? elem.context.context_id : 0));
+            fprintf(m_fp_decode_out, "%u,%u,%u,", 0, ((trc_chan_id & 0x0F)), (elem.context.ctxt_id_valid ? elem.context.context_id : 0));
             if (m_update_cycle_cnt)
             {
                 fprintf(m_fp_decode_out, "%u,", m_cycle_cnt);
@@ -1477,7 +1477,7 @@ ocsd_datapath_resp_t TraceLogger::TraceElemIn(const ocsd_trc_index_t index_sop,
             ocsd_vaddr_t step = elem.traced_ins.ptr_addresses ? 1 : elem.last_instr_sz;
             for (ocsd_vaddr_t i = start_idx; i < end_idx; i += step)
             {
-                fprintf(m_fp_decode_out, "%u,%u,%u,", 0, ((trc_chan_id & 0x0F) >> 1), (elem.context.ctxt_id_valid ? elem.context.context_id : 0));
+                fprintf(m_fp_decode_out, "%u,%u,%u,", 0, ((trc_chan_id & 0x0F)), (elem.context.ctxt_id_valid ? elem.context.context_id : 0));
                 if (m_update_cycle_cnt)
                 {
                     fprintf(m_fp_decode_out, "%u,", 0);
@@ -1539,14 +1539,14 @@ ocsd_datapath_resp_t TraceLogger::TraceElemIn(const ocsd_trc_index_t index_sop,
         case OCSD_GEN_TRC_ELEM_EVENT:
         {
             if (elem.trace_event.ev_type == EVENT_TRIGGER)
-                fprintf(m_fp_decode_out, "%u,Trigger Event\n", ((trc_chan_id & 0x0F) >> 1));
+                fprintf(m_fp_decode_out, "%u,Trigger Event\n", ((trc_chan_id & 0x0F)));
             else if (elem.trace_event.ev_type == EVENT_NUMBERED)
-                fprintf(m_fp_decode_out, "%u,Event No=%u\n", ((trc_chan_id & 0x0F) >> 1), elem.trace_event.ev_number);
+                fprintf(m_fp_decode_out, "%u,Event No=%u\n", ((trc_chan_id & 0x0F)), elem.trace_event.ev_number);
         }
         break;
         case OCSD_GEN_TRC_ELEM_INSTRUMENTATION:
         {
-            fprintf(m_fp_decode_out, "%u,SWITE,%u,%llu\n", ((trc_chan_id & 0x0F) >> 1), elem.sw_ite.el, elem.sw_ite.value);
+            fprintf(m_fp_decode_out, "%u,SWITE,%u,%llu\n", ((trc_chan_id & 0x0F)), elem.sw_ite.el, elem.sw_ite.value);
         }
         break;
         case OCSD_GEN_TRC_ELEM_SWTRACE:
