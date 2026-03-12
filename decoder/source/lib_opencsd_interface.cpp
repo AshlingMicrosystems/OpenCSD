@@ -424,6 +424,34 @@ TyTraceDecodeError OpenCSDInterface::AddMemoryAccessCallback(const ocsd_vaddr_t 
 }
 
 /****************************************************************************
+     Function: AddMemoryAccessCallbackID
+     Engineer: Arjun Suresh / GitHub Copilot
+        Input: st_address - start address of memory region
+               en_address - end address of memory region
+               mem_space - Specify if memory region can be accessed only under
+                           certain security/exception levels. By default always
+                           use OCSD_MEM_SPACE_ANY
+               p_cb_func - pointer to callback function (with trace ID parameter)
+               p_context - The callback should copy the requested data to this
+                           pointer
+       Output: None
+       return: TyTraceDecodeError
+  Description: Add memory access callback with trace ID for multicore support
+  Date         Initials    Description
+12-Mar-2026    Copilot     Initial
+****************************************************************************/
+TyTraceDecodeError OpenCSDInterface::AddMemoryAccessCallbackID(const ocsd_vaddr_t st_address, const ocsd_vaddr_t en_address, const ocsd_mem_space_acc_t mem_space, Fn_MemAccID_CB p_cb_func, const void *p_context)
+{
+    ocsd_err_t ret = mp_tree->addCallbackIDMemAcc(st_address, en_address,
+        mem_space, p_cb_func, p_context);
+    if (ret != OCSD_OK)
+    {
+        return TRACE_DECODER_MEM_ACC_MAP_ADD_ERR;
+    }
+    return TRACE_DECODER_OK;
+}
+
+/****************************************************************************
      Function: SetPacketMonitorSink
      Engineer: Arjun Suresh
         Input: CSID - Source ID

@@ -181,8 +181,10 @@ public:
     virtual TyTraceDecodeError UpdateMemoryAccessMapFromBin(const ocsd_file_mem_region_t* region, const ocsd_mem_space_acc_t mem_space, const uint32_t num_regions, const char* path);
     // Function to add memory access map from buffer file
     virtual TyTraceDecodeError AddMemoryAccessMapFromBuffer(const ocsd_vaddr_t address, const ocsd_mem_space_acc_t mem_space, const uint8_t* p_mem_buffer, const uint32_t mem_length);
-    // Function to add memory access callback
+    // Function to add memory access callback (basic version without trace ID)
     virtual TyTraceDecodeError AddMemoryAccessCallback(const ocsd_vaddr_t st_address, const ocsd_vaddr_t en_address, const ocsd_mem_space_acc_t mem_space, Fn_MemAcc_CB p_cb_func, const void* p_context);
+    // Function to add memory access callback with trace ID (for multicore support)
+    virtual TyTraceDecodeError AddMemoryAccessCallbackID(const ocsd_vaddr_t st_address, const ocsd_vaddr_t en_address, const ocsd_mem_space_acc_t mem_space, Fn_MemAccID_CB p_cb_func, const void* p_context);
     // Function to decode the trace file
     virtual TyTraceDecodeError DecodeTrace(const char* trace_in_file);
     // Function to decode trace buffer
