@@ -424,6 +424,34 @@ TyTraceDecodeError OpenCSDInterface::AddMemoryAccessCallback(const ocsd_vaddr_t 
 }
 
 /****************************************************************************
+     Function: AddMemoryAccessCallbackID
+     Engineer: Arjun Suresh / GitHub Copilot
+        Input: st_address - start address of memory region
+               en_address - end address of memory region
+               mem_space - Specify if memory region can be accessed only under
+                           certain security/exception levels. By default always
+                           use OCSD_MEM_SPACE_ANY
+               p_cb_func - pointer to callback function (with trace ID parameter)
+               p_context - The callback should copy the requested data to this
+                           pointer
+       Output: None
+       return: TyTraceDecodeError
+  Description: Add memory access callback with trace ID for multicore support
+  Date         Initials    Description
+12-Mar-2026    Copilot     Initial
+****************************************************************************/
+TyTraceDecodeError OpenCSDInterface::AddMemoryAccessCallbackID(const ocsd_vaddr_t st_address, const ocsd_vaddr_t en_address, const ocsd_mem_space_acc_t mem_space, Fn_MemAccID_CB p_cb_func, const void *p_context)
+{
+    ocsd_err_t ret = mp_tree->addCallbackIDMemAcc(st_address, en_address,
+        mem_space, p_cb_func, p_context);
+    if (ret != OCSD_OK)
+    {
+        return TRACE_DECODER_MEM_ACC_MAP_ADD_ERR;
+    }
+    return TRACE_DECODER_OK;
+}
+
+/****************************************************************************
      Function: SetPacketMonitorSink
      Engineer: Arjun Suresh
         Input: CSID - Source ID
@@ -1452,7 +1480,7 @@ ocsd_datapath_resp_t TraceLogger::TraceElemIn(const ocsd_trc_index_t index_sop,
         break;
         case OCSD_GEN_TRC_ELEM_ADDR_NACC:
         {
-            fprintf(m_fp_decode_out, "%u,%u,%u,", 0, ((trc_chan_id & 0x0F) >> 1), (elem.context.ctxt_id_valid ? elem.context.context_id : 0));
+            fprintf(m_fp_decode_out, "%u,%u,%u,", 0, ((trc_chan_id & 0x0F)), (elem.context.ctxt_id_valid ? elem.context.context_id : 0));
             if (m_update_cycle_cnt)
             {
                 fprintf(m_fp_decode_out, "%u,", m_cycle_cnt);
@@ -1477,7 +1505,7 @@ ocsd_datapath_resp_t TraceLogger::TraceElemIn(const ocsd_trc_index_t index_sop,
             ocsd_vaddr_t step = elem.traced_ins.ptr_addresses ? 1 : elem.last_instr_sz;
             for (ocsd_vaddr_t i = start_idx; i < end_idx; i += step)
             {
-                fprintf(m_fp_decode_out, "%u,%u,%u,", 0, ((trc_chan_id & 0x0F) >> 1), (elem.context.ctxt_id_valid ? elem.context.context_id : 0));
+                fprintf(m_fp_decode_out, "%u,%u,%u,", 0, ((trc_chan_id & 0x0F)), (elem.context.ctxt_id_valid ? elem.context.context_id : 0));
                 if (m_update_cycle_cnt)
                 {
                     fprintf(m_fp_decode_out, "%u,", 0);
@@ -1539,14 +1567,14 @@ ocsd_datapath_resp_t TraceLogger::TraceElemIn(const ocsd_trc_index_t index_sop,
         case OCSD_GEN_TRC_ELEM_EVENT:
         {
             if (elem.trace_event.ev_type == EVENT_TRIGGER)
-                fprintf(m_fp_decode_out, "%u,Trigger Event\n", ((trc_chan_id & 0x0F) >> 1));
+                fprintf(m_fp_decode_out, "%u,Trigger Event\n", ((trc_chan_id & 0x0F)));
             else if (elem.trace_event.ev_type == EVENT_NUMBERED)
-                fprintf(m_fp_decode_out, "%u,Event No=%u\n", ((trc_chan_id & 0x0F) >> 1), elem.trace_event.ev_number);
+                fprintf(m_fp_decode_out, "%u,Event No=%u\n", ((trc_chan_id & 0x0F)), elem.trace_event.ev_number);
         }
         break;
         case OCSD_GEN_TRC_ELEM_INSTRUMENTATION:
         {
-            fprintf(m_fp_decode_out, "%u,SWITE,%u,%llu\n", ((trc_chan_id & 0x0F) >> 1), elem.sw_ite.el, elem.sw_ite.value);
+            fprintf(m_fp_decode_out, "%u,SWITE,%u,%llu\n", ((trc_chan_id & 0x0F)), elem.sw_ite.el, elem.sw_ite.value);
         }
         break;
         case OCSD_GEN_TRC_ELEM_SWTRACE:
